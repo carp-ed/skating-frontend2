@@ -368,7 +368,7 @@ export default function App() {
             <div className="flex flex-row gap-6 pb-4">
               
               {/* 左側：跳躍、旋轉、步伐 */}
-              <div className="flex-1 flex flex-col gap-5">
+              <div className="w-[450px] flex flex-col gap-5">
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Jumps / Throw Jumps</h4>
                   <div className="grid grid-cols-[35px_repeat(5,1fr)_85px] gap-1">
@@ -384,7 +384,7 @@ export default function App() {
                         <button onClick={() => appendToName(row.label)} className="bg-[#2b3036] hover:bg-slate-600 flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-sm active:scale-95">{row.label}</button>
                         {row.btns.map((btn, idx) => {
                           let val = btn === 'Th' ? 'Th' : `${btn}${row.label}`;
-                          let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-lg font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm shadow-sm active:bg-blue-600";
+                          let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-sm font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-sm font-bold rounded-sm shadow-sm active:bg-blue-600";
                           return <button key={val} onClick={() => appendToName(val)} className={btnClass}>{btn}</button>
                         })}
                         <button onClick={() => appendToName(row.mod)} className="bg-[#2b5433] text-white py-2 border border-[#3f7a4a] text-sm font-bold rounded-sm shadow-sm active:bg-green-600">{row.mod}</button>
@@ -395,8 +395,8 @@ export default function App() {
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Spins</h4>
-                  <div className="grid grid-cols-[repeat(5,1fr)] gap-1 mb-1">
-                    {['F', 'C', 'P', 'Sp', '*'].map(mod => (<button key={mod} onClick={() => appendToName(mod)} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">{mod}</button>))}
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-1 mb-1">
+                    {['F', 'C', 'P', 'Sp', null, '*'].map(mod => mod ? (<button key={mod} onClick={() => appendToName(mod)} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">{mod}</button>) : <div key="empty"></div>)}
                   </div>
                   <div className="grid grid-cols-[repeat(6,1fr)] gap-1">
                     {['CSp', 'SSp', 'USp', 'LSp', 'CoSp', 'ChSp'].map(base => (<button key={base} onClick={() => appendToName(base)} className={`text-white py-2 border text-lg font-bold rounded-sm ${base === 'ChSp' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{base}</button>))}
@@ -412,7 +412,7 @@ export default function App() {
               </div>
 
               {/* 右側：雙人/冰舞動作 */}
-              <div className="w-[300px] flex flex-col gap-5 border-l border-slate-700 pl-6">
+              <div className="flex-1 flex flex-col gap-5 border-l border-slate-700 pl-6">
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
                   <div className="grid grid-cols-6 gap-1">
@@ -507,7 +507,7 @@ export default function App() {
           <div className="h-24 flex bg-[#2a2a2a] p-1 gap-2 shrink-0 items-center justify-between">
             <div className="flex gap-2 h-full py-1">
               {['composition', 'presentation', 'skatingSkills'].map((key) => {
-                const config = { composition: { bg: '#0b5394', label: 'COMPOSITION' }, presentation: { bg: '#990000', label: 'PRESENTATION' }, skatingSkills: { bg: '#b45f06', label: 'SKATING SKILLS' } }[key];
+                const config = { composition: { bg: '#0b5394', label: 'COMP' }, presentation: { bg: '#990000', label: 'PRES' }, skatingSkills: { bg: '#b45f06', label: 'SKILLS' } }[key];
                 return (
                   <div key={key} className="flex h-full border border-slate-600 shadow-sm rounded-sm overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => openPcsModal(key)}>
                     <div style={{ backgroundColor: config.bg }} className="text-white px-3 flex items-center font-bold text-sm writing-vertical">{config.label}</div>
