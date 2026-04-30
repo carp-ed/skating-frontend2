@@ -507,7 +507,7 @@ export default function App() {
           <div className="h-24 flex bg-[#2a2a2a] p-1 gap-2 shrink-0 items-center justify-between">
             <div className="flex gap-2 h-full py-1">
               {['composition', 'presentation', 'skatingSkills'].map((key) => {
-                const config = { composition: { bg: '#0b5394', label: 'COMP' }, presentation: { bg: '#990000', label: 'PRES' }, skatingSkills: { bg: '#b45f06', label: 'SKILLS' } }[key];
+                const config = { composition: { bg: '#0b5394', label: 'COMPOSITION' }, presentation: { bg: '#990000', label: 'PRESENATATION' }, skatingSkills: { bg: '#b45f06', label: 'SKATING SKILLS' } }[key];
                 return (
                   <div key={key} className="flex h-full border border-slate-600 shadow-sm rounded-sm overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => openPcsModal(key)}>
                     <div style={{ backgroundColor: config.bg }} className="text-white px-3 flex items-center font-bold text-sm writing-vertical">{config.label}</div>
