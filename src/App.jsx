@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-// === 引入 Firebase 套件 ===
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
-// === 貼上您的 Firebase 專屬鑰匙 ===
 const firebaseConfig = {
   apiKey: "AIzaSyAMiVvAE9NCjgrWgLoDb4Akr4jWVVpeHrM",
   authDomain: "scoring-db-7c3a7.firebaseapp.com",
@@ -14,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-H7TXDTSN6F"
 };
 
-// 初始化 Firebase 與資料庫 (Firestore)
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -47,15 +44,12 @@ export default function App() {
   const [tempPcsValue, setTempPcsValue] = useState('0.00');
   const [tempSubScores, setTempSubScores] = useState([]);
   const [activeModalField, setActiveModalField] = useState('overall');
-  
   const [isInputMode, setIsInputMode] = useState(false);
   
-  // 影片相關狀態
   const [videoUrl, setVideoUrl] = useState('');
   const [embedUrl, setEmbedUrl] = useState('');
   const [cleanAppUrl, setCleanAppUrl] = useState(''); 
 
-  // 遮罩狀態 (Blocker)
   const [showBlocker, setShowBlocker] = useState(false);
   const [blockerState, setBlockerState] = useState({ x: 100, y: 100, width: 250, height: 100 });
   const dragInfo = useRef({ isDragging: false, isResizing: false, startX: 0, startY: 0, initialX: 0, initialY: 0, initialW: 0, initialH: 0 });
@@ -71,43 +65,31 @@ export default function App() {
     }
   }, [notification]);
 
-  // --- 影片網址「萬能」智慧轉換器 ---
   const handleVideoLoad = () => {
     if (!videoUrl) return;
     let finalUrl = videoUrl;
     let appUrl = '';
-
     try {
         const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
         const ytMatch = videoUrl.match(ytRegex);
-
         if (ytMatch && ytMatch[1]) {
             const videoId = ytMatch[1];
             finalUrl = `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&autoplay=0&rel=0`;
             appUrl = `https://www.youtube.com/watch?v=${videoId}`; 
-        } 
-        else if (videoUrl.match(/(BV[a-zA-Z0-9]+)/)) {
-            const bvid = videoUrl.match(/(BV[a-zA-Z0-9]+)/)[1];
-            finalUrl = `https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0`;
-        }
-        else if (videoUrl.match(/vimeo\.com\/(?:video\/)?([0-9]+)/)) {
-            const vimeoId = videoUrl.match(/vimeo\.com\/(?:video\/)?([0-9]+)/)[1];
-            finalUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=0`;
-        }
-        else {
+        } else if (videoUrl.match(/(BV[a-zA-Z0-9]+)/)) {
+            finalUrl = `https://player.bilibili.com/player.html?bvid=${videoUrl.match(/(BV[a-zA-Z0-9]+)/)[1]}&autoplay=0`;
+        } else if (videoUrl.match(/vimeo\.com\/(?:video\/)?([0-9]+)/)) {
+            finalUrl = `https://player.vimeo.com/video/${videoUrl.match(/vimeo\.com\/(?:video\/)?([0-9]+)/)[1]}?autoplay=0`;
+        } else {
             const iframeMatch = videoUrl.match(/src="([^"]+)"/);
-            if (iframeMatch && iframeMatch[1]) {
-                finalUrl = iframeMatch[1];
-            }
+            if (iframeMatch && iframeMatch[1]) finalUrl = iframeMatch[1];
         }
-    } catch (e) {
-        console.warn("URL Parsing Error", e);
-    }
-    
+    } catch (e) { console.warn("URL Error", e); }
     setEmbedUrl(finalUrl);
     setCleanAppUrl(appUrl);
   };
 
+  // Blocker Drag & Resize Logic
   const startDrag = (e) => {
     e.stopPropagation();
     try { e.target.setPointerCapture(e.pointerId); } catch(err){}
@@ -134,35 +116,27 @@ export default function App() {
 
   const stopResize = (e) => { dragInfo.current.isResizing = false; try { e.target.releasePointerCapture(e.pointerId); } catch(err){} };
 
-  // ==========================================
-  // 🌟 Firebase 核心寫入邏輯
-  // ==========================================
   const submitScoresToBackend = async () => {
     setIsSent(true); 
-    
-    // 確保 skater_id 是唯一值 (檔名)
-    const skater_id = skaterInfo.name && skaterInfo.name !== 'WAITING FOR DATA...' 
-        ? skaterInfo.name 
-        : `Unknown_${skaterInfo.stn || Date.now()}`;
+    const skater_id = skaterInfo.name && skaterInfo.name !== 'WAITING FOR DATA...' ? skaterInfo.name : `Unknown_${skaterInfo.stn || Date.now()}`;
+
+    // 儲存原始 elements 以供後續比對修改痕跡
+    const original_elements = elements.map(el => ({ name: el.name, info: el.info }));
 
     const payload = {
-      skater: skaterInfo.name, 
-      stn: skaterInfo.stn, 
-      noc: skaterInfo.noc, 
-      competition: skaterInfo.comp,
+      skater: skaterInfo.name, stn: skaterInfo.stn, noc: skaterInfo.noc, competition: skaterInfo.comp,
       elements: elements,
+      original_elements: original_elements, // 保留裁判原始輸入
       pcs: { composition: pcs.composition, presentation: pcs.presentation, skatingSkills: pcs.skatingSkills },
       pcs_criteria: pcsSubScores,
-      timestamp: new Date().toISOString() // 記錄送出時間
+      timestamp: new Date().toISOString()
     };
 
     try {
-      // 魔法發生在這裡：直接存入名為 'scores' 的集合 (Collection) 裡
       await setDoc(doc(db, "scores", skater_id), payload);
       setNotification(`✅ 已成功將 [${skaterInfo.name}] 的成績發送至 Firebase 雲端！`);
     } catch (error) {
-      console.error("Firebase 錯誤:", error);
-      alert(`傳送失敗！請確認網路狀態。\n錯誤訊息: ${error.message}`);
+      alert(`傳送失敗！\n錯誤訊息: ${error.message}`);
       setIsSent(false); 
     }
   };
@@ -182,25 +156,40 @@ export default function App() {
     }
   };
 
+  // 支援解析 CSV 中的 Elements 與 Info
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result;
-      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
       const parsedSkaters = lines.map(line => {
         const cols = line.split(',');
-        return { comp: cols[0] ? cols[0].trim() : '', stn: cols[1] ? cols[1].trim() : '', name: cols[2] ? cols[2].trim().replace(/\//g, ' & ') : '', noc: cols[3] ? cols[3].trim() : '' };
+        const skater = { comp: cols[0]?.trim() || '', stn: cols[1]?.trim() || '', name: cols[2]?.trim().replace(/\//g, ' & ') || '', noc: cols[3]?.trim() || '' };
+        
+        // 嘗試讀取動作與資訊 (從第 5 欄開始)
+        const loadedElements = Array.from({ length: 16 }, (_, i) => {
+           const nameColIdx = 4 + (i * 2);
+           const infoColIdx = 5 + (i * 2);
+           return {
+               id: i + 1,
+               name: cols[nameColIdx] ? cols[nameColIdx].trim() : '',
+               goe: null, fall: false,
+               info: cols[infoColIdx] ? cols[infoColIdx].trim() : ''
+           };
+        });
+        skater.elements = loadedElements;
+        return skater;
       });
 
       if (parsedSkaters.length > 0) {
         setSkaterList(parsedSkaters);
         setCurrentSkaterIndex(0);
         setSkaterInfo(parsedSkaters[0]);
+        setElements(parsedSkaters[0].elements); // 載入 CSV 動作
         handleNewProgram(false);
-        setNotification(`✅ 成功載入 ${parsedSkaters.length} 位選手名單！`);
+        setNotification(`✅ 成功載入 ${parsedSkaters.length} 位選手名單與預設動作！`);
       }
     };
     reader.readAsText(file);
@@ -208,17 +197,16 @@ export default function App() {
   };
 
   const handleNextSkater = () => {
-    if (skaterList.length === 0) { setSkaterInfo({ comp: skaterInfo.comp, stn: '', noc: '', name: '' }); handleNewProgram(false); return; }
+    if (skaterList.length === 0) return;
     if (currentSkaterIndex < skaterList.length - 1) {
       const nextIdx = currentSkaterIndex + 1;
       setCurrentSkaterIndex(nextIdx);
       setSkaterInfo(skaterList[nextIdx]);
+      setElements(skaterList[nextIdx].elements || Array.from({ length: 16 }, (_, i) => ({ id: i + 1, name: '', goe: null, fall: false, info: '' })));
       handleNewProgram(false);
     } else {
-      if (window.confirm("已經是 CSV 名單中的最後一位選手了！\n要開啟全新的空白表單，手動新增下一位嗎？")) {
-        setSkaterList([]); 
-        setSkaterInfo({ comp: skaterInfo.comp, stn: '', noc: '', name: '' });
-        handleNewProgram(false);
+      if (window.confirm("已經是最後一位選手了！要開啟空白表單嗎？")) {
+        setSkaterList([]); setSkaterInfo({ comp: skaterInfo.comp, stn: '', noc: '', name: '' }); handleNewProgram(false);
       }
     }
   };
@@ -262,13 +250,16 @@ export default function App() {
   };
 
   const openPcsModal = (category) => {
-    setActivePcsCategory(category);
-    setTempPcsValue(pcs[category]);
-    setTempSubScores([...pcsSubScores[category]]);
-    setActiveModalField('overall');
-    setIsPcsModalOpen(true);
+    setActivePcsCategory(category); setTempPcsValue(pcs[category]); setTempSubScores([...pcsSubScores[category]]); setActiveModalField('overall'); setIsPcsModalOpen(true);
   };
 
+  const savePcsModal = () => {
+    setPcs(prev => ({ ...prev, [activePcsCategory]: tempPcsValue }));
+    setPcsSubScores(prev => ({ ...prev, [activePcsCategory]: tempSubScores }));
+    setIsSent(false); setIsPcsModalOpen(false);
+  };
+
+  // --- 補回：PCS 彈窗的數字與小數點按鈕邏輯 ---
   const handleModalNumberClick = (num) => {
     const val = `${num}.00`;
     if (activeModalField === 'overall') setTempPcsValue(val);
@@ -283,19 +274,14 @@ export default function App() {
     }
   };
 
-  const savePcsModal = () => {
-    setPcs(prev => ({ ...prev, [activePcsCategory]: tempPcsValue }));
-    setPcsSubScores(prev => ({ ...prev, [activePcsCategory]: tempSubScores }));
-    setIsSent(false);
-    setIsPcsModalOpen(false);
-  };
-
   const filledScores = tempSubScores.filter(s => s !== null).map(Number);
   const calculatedAvg = filledScores.length > 0 ? (filledScores.reduce((a, b) => a + b, 0) / filledScores.length).toFixed(2) : '--';
+
   const goeButtons = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#1a1a1a] text-slate-100 font-sans select-none overflow-hidden relative">
+      
       {/* 遮罩 (Score Blocker) 渲染區塊 */}
       {showBlocker && (
         <div style={{ position: 'absolute', top: blockerState.y, left: blockerState.x, width: blockerState.width + 'px', height: blockerState.height + 'px', zIndex: 9999 }} className="bg-black border-2 border-slate-500 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col rounded-md overflow-visible relative">
@@ -314,11 +300,7 @@ export default function App() {
         </div>
       )}
 
-      {notification && (
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded shadow-2xl z-[100] font-bold text-lg border-2 border-green-400 animate-bounce">
-          {notification}
-        </div>
-      )}
+      {notification && <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded shadow-2xl z-[100] font-bold text-lg border-2 border-green-400 animate-bounce">{notification}</div>}
 
       <div className="h-16 bg-[#2b3036] border-b border-black flex items-center px-2 text-sm font-bold shrink-0">
         <div className="text-green-500 px-3 tracking-widest text-lg">MAIN</div>
@@ -335,14 +317,14 @@ export default function App() {
             <input type="text" value={skaterInfo.name} onChange={e => setSkaterInfo({...skaterInfo, name: e.target.value.replace(/\//g, ' & ')})} className="bg-transparent outline-none hover:bg-slate-700 px-1 w-[200px] rounded font-bold" placeholder="Skater Name" />
           </div>
         </div>
-
         <div className="flex-1"></div>
         <input type="file" accept=".csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} />
+        
         <button onClick={() => setShowBlocker(!showBlocker)} className="text-slate-300 px-4 py-2 hover:bg-slate-700 border border-slate-600 rounded bg-slate-800 mr-2 flex items-center gap-2"><span className="text-lg leading-none">⬛</span> BLOCKER</button>
-        <button onClick={() => fileInputRef.current.click()} className="text-slate-300 px-4 py-2 hover:bg-slate-700 border border-slate-600 rounded bg-slate-800 mr-2 flex items-center gap-2"><span className="text-lg leading-none">📋</span> IMPORT SKATERS</button>
-        <button onClick={() => handleNewProgram(true)} className="text-slate-300 px-4 py-2 hover:bg-slate-700 border border-slate-600 rounded bg-slate-800 mr-2 flex items-center gap-2"><span className="text-lg leading-none">📄</span> NEW BLANK</button>
-        <button onClick={() => setIsInputMode(!isInputMode)} className={`px-5 py-2 border rounded mr-2 flex items-center gap-2 font-bold shadow-md transition-colors ${isInputMode ? 'bg-[#990000] border-[#cc0000] text-white' : 'bg-[#0b5394] border-[#1e768f] text-white'}`}>
-          <span className="text-lg leading-none">{isInputMode ? '📺' : '⌨️'}</span> {isInputMode ? 'VIDEO' : 'INPUT'}
+        <button onClick={() => fileInputRef.current.click()} className="text-slate-300 px-4 py-2 hover:bg-slate-700 border border-slate-600 rounded bg-slate-800 mr-2 flex items-center gap-2"><span className="text-lg leading-none">📋</span> IMPORT</button>
+        <button onClick={() => handleNewProgram(true)} className="text-slate-300 px-4 py-2 hover:bg-slate-700 border border-slate-600 rounded bg-slate-800 mr-2 flex items-center gap-2"><span className="text-lg leading-none">📄</span> NEW</button>
+        <button onClick={() => setIsInputMode(!isInputMode)} className={`px-5 py-2 border rounded mr-2 flex items-center gap-2 font-bold shadow-md transition-colors ${isInputMode ? 'bg-[#990000] border-[#cc0000]' : 'bg-[#0b5394] border-[#1e768f]'}`}>
+          {isInputMode ? '📺 VIDEO' : '⌨️ INPUT'}
         </button>
       </div>
 
@@ -354,14 +336,14 @@ export default function App() {
                 <React.Fragment key={el.id}>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-[#1a5b6e] text-sm cursor-pointer ${activeIndex === index ? 'bg-[#1e768f] text-white' : ''}`}>{String(index + 1).padStart(2, '0')}</div>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center px-2 border-b border-r border-[#1a5b6e] text-base cursor-pointer ${activeIndex === index ? 'bg-[#1e768f] text-white font-bold' : ''}`}>
-                    <input type="text" value={el.name} readOnly className="w-full bg-transparent outline-none placeholder:text-slate-500/50 cursor-pointer" placeholder="-" />
+                    <input type="text" value={el.name} onChange={(e) => { const newEls=[...elements]; newEls[index].name=e.target.value; setElements(newEls); }} className="w-full bg-transparent outline-none placeholder:text-slate-500/50 cursor-pointer" placeholder="-" />
                   </div>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-slate-300 cursor-pointer font-bold text-lg ${el.goe !== null ? 'bg-white text-black' : 'bg-[#e0e0e0] text-transparent'}`}>{el.goe !== null ? el.goe : '-'}</div>
                   <div onClick={(e) => toggleFall(index, e)} className="flex items-center justify-center border-b border-r border-[#1a5b6e] cursor-pointer hover:bg-slate-700/50">
                     {el.fall && <span className="text-red-500 font-black text-xl leading-none">X</span>}
                   </div>
                   <div onClick={() => setActiveIndex(index)} className="flex items-center justify-center border-b border-[#1a5b6e] text-yellow-400 font-mono">
-                    <input type="text" value={el.info} readOnly className="w-full text-center bg-transparent outline-none cursor-pointer" />
+                    <input type="text" value={el.info} onChange={(e) => { const newEls=[...elements]; newEls[index].info=e.target.value; setElements(newEls); }} className="w-full text-center bg-transparent outline-none cursor-pointer" />
                   </div>
                 </React.Fragment>
               ))}
@@ -372,87 +354,93 @@ export default function App() {
         <div className="flex-1 flex flex-col bg-black overflow-hidden relative">
           
           <div className={`flex-1 overflow-y-auto bg-[#141414] p-4 flex-col gap-4 ${isInputMode ? 'flex' : 'hidden'}`}>
-            <div className="flex justify-between items-center bg-[#222] p-2 rounded border border-slate-700 sticky top-0 z-10 shadow-md shrink-0">
+            <div className="flex justify-between items-center bg-[#222] p-2 rounded border border-slate-700 sticky top-0 z-10 shadow-md shrink-0 mb-2">
               <div className="flex items-center gap-3">
                 <span className="text-slate-400 font-bold tracking-wider uppercase text-sm">Row {String(activeIndex + 1).padStart(2, '0')}</span>
                 <div className="text-xl font-mono text-white font-bold bg-black px-4 py-1.5 rounded min-w-[150px] min-h-[40px] flex items-center shadow-inner border border-slate-800">
-                  {elements[activeIndex].name}
-                  <span className="w-2 h-5 bg-blue-500 animate-pulse ml-1"></span>
+                  {elements[activeIndex].name}<span className="w-2 h-5 bg-blue-500 animate-pulse ml-1"></span>
                 </div>
               </div>
               <button onClick={clearName} className="px-6 py-2 bg-[#7a3333] hover:bg-[#990000] text-white font-bold rounded border border-[#542121] transition-colors shadow-sm tracking-wider">CLEAR</button>
             </div>
 
-            <div className="flex flex-col gap-4 pb-4">
-              <div>
-                <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Jumps/ Throw Jumps</h4>
-                <div className="grid grid-cols-[90px_repeat(6,1fr)] gap-1">
-                  {[
-                    { label: 'Toe Loop', base: 'T', btns: ['1', '2', '3', '4', '5'], mod: '*' },
-                    { label: 'Salchow', base: 'S', btns: ['1', '2', '3', '4', '5'], mod: '+' },
-                    { label: 'Loop', base: 'Lo', btns: ['1', '2', '3', '4', '5'], mod: '+COMBO' },
-                    { label: 'Flip', base: 'F', btns: ['1', '2', '3', '4', '5'], mod: '+SEQ' },
-                    { label: 'Lutz', base: 'Lz', btns: ['1', '2', '3', '4', '5'], mod: '+REP' },
-                    { label: 'Axel', base: 'A', btns: ['1', '2', '3', '4', 'Th'], mod: '+1Eu+' },
-                  ].map(row => (
-                    <React.Fragment key={row.base}>
-                      <div className="bg-[#2b3036] flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-xs text-center leading-tight px-1">{row.label}</div>
-                      {row.btns.map((btn, idx) => {
-                        if (!btn) return <div key={`empty-${idx}`}></div>;
-                        let val = btn === 'Th' ? 'Th' : `${btn}${row.base}`;
-                        let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-xl font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-xl font-bold rounded-sm shadow-sm active:bg-blue-600";
-                        return <button key={val} onClick={() => appendToName(val)} className={btnClass}>{btn}</button>
-                      })}
-                      <button onClick={() => appendToName(row.mod)} className="bg-[#2b5433] text-white py-2 border border-[#3f7a4a] text-sm lg:text-base font-bold rounded-sm shadow-sm active:bg-green-600">{row.mod}</button>
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Spins</h4>
-                <div className="grid grid-cols-[repeat(6,1fr)] gap-1 mb-1">
-                  {['F', 'C', 'P', '', '', '*'].map((mod, idx) => (mod ? <button key={`spinmod-${idx}`} onClick={() => appendToName(mod)} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">{mod}</button> : <div key={`spinmod-empty-${idx}`} className="bg-transparent"></div>))}
-                </div>
-                <div className="grid grid-cols-[repeat(6,1fr)] gap-1">
-                  {['CSp', 'SSp', 'USp', 'LSp', 'CoSp', 'ChSp'].map(base => (<button key={base} onClick={() => appendToName(base)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg lg:text-xl font-bold rounded-sm">{base}</button>))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Sequences</h4>
-                <div className="flex gap-1">
-                  {['StSq', 'ChSq'].map(seq => (<button key={seq} onClick={() => appendToName(seq)} className="w-[120px] bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg lg:text-xl font-bold rounded-sm">{seq}</button>))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Lifts</h4>
-                <div className="grid grid-cols-6 gap-1 mb-1">
-                  {['1Li', '2Li', '3Li', '4Li', 'Li', '*'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{lift}</button>))}
-                </div>
-                <div className="grid grid-cols-6 gap-1">
-                  {['5TLi', '5SLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{lift}</button>))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            {/* 新版左右佈局 */}
+            <div className="flex flex-row gap-6 pb-4">
+              
+              {/* 左側：跳躍、旋轉、步伐 */}
+              <div className="flex-1 flex flex-col gap-5">
                 <div>
-                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
-                  <div className="grid grid-cols-3 gap-1">
-                    {['1Tw', '2Tw', '3Tw', '4Tw', 'Tw', '*'].map(tw => (<button key={tw} onClick={() => appendToName(tw)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{tw}</button>))}
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Jumps / Throw Jumps</h4>
+                  <div className="grid grid-cols-[35px_repeat(5,1fr)_85px] gap-1">
+                    {[
+                      { label: 'T', btns: ['1', '2', '3', '4', '5'], mod: '*' },
+                      { label: 'S', btns: ['1', '2', '3', '4', '5'], mod: '+' },
+                      { label: 'Lo', btns: ['1', '2', '3', '4', '5'], mod: '+COMBO' },
+                      { label: 'F', btns: ['1', '2', '3', '4', '5'], mod: '+SEQ' },
+                      { label: 'Lz', btns: ['1', '2', '3', '4', '5'], mod: '+REP' },
+                      { label: 'A', btns: ['1', '2', '3', '4', 'Th'], mod: '+1Eu' },
+                    ].map(row => (
+                      <React.Fragment key={row.label}>
+                        <button onClick={() => appendToName(row.label)} className="bg-[#2b3036] hover:bg-slate-600 flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-sm active:scale-95">{row.label}</button>
+                        {row.btns.map((btn, idx) => {
+                          let val = btn === 'Th' ? 'Th' : `${btn}${row.label}`;
+                          let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-lg font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm shadow-sm active:bg-blue-600";
+                          return <button key={val} onClick={() => appendToName(val)} className={btnClass}>{btn}</button>
+                        })}
+                        <button onClick={() => appendToName(row.mod)} className="bg-[#2b5433] text-white py-2 border border-[#3f7a4a] text-sm font-bold rounded-sm shadow-sm active:bg-green-600">{row.mod}</button>
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Spins</h4>
+                  <div className="grid grid-cols-[repeat(5,1fr)] gap-1 mb-1">
+                    {['F', 'C', 'P', 'Sp', '*'].map(mod => (<button key={mod} onClick={() => appendToName(mod)} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">{mod}</button>))}
+                  </div>
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-1">
+                    {['CSp', 'SSp', 'USp', 'LSp', 'CoSp', 'ChSp'].map(base => (<button key={base} onClick={() => appendToName(base)} className={`text-white py-2 border text-lg font-bold rounded-sm ${base === 'ChSp' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{base}</button>))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Sequences</h4>
+                  <div className="flex gap-1">
+                    {['StSq', 'ChSq'].map(seq => (<button key={seq} onClick={() => appendToName(seq)} className="flex-1 bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{seq}</button>))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 右側：雙人/冰舞動作 */}
+              <div className="w-[300px] flex flex-col gap-5 border-l border-slate-700 pl-6">
+                <div>
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
+                  <div className="grid grid-cols-6 gap-1">
+                    {['Tw', '1', '2', '3', '4', '*'].map(tw => (<button key={tw} onClick={() => appendToName(tw)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-base font-bold rounded-sm hover:bg-blue-600">{tw}</button>))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Lifts</h4>
+                  <div className="grid grid-cols-6 gap-1 mb-1">
+                    {['Li', '1', '2', '3', '4', '*'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-base font-bold rounded-sm hover:bg-blue-600">{lift}</button>))}
+                  </div>
+                  <div className="grid grid-cols-6 gap-1">
+                    {['5SLi', '5TLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className={`text-white py-2 border text-[13px] font-bold rounded-sm ${lift === 'ChLi' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{lift}</button>))}
+                  </div>
+                </div>
+
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Death Spirals</h4>
-                  <div className="grid grid-cols-3 gap-1">
-                    {['BoDs', 'BiDs', 'FoDs', 'FiDs', 'Ds', '*'].map(ds => (<button key={ds} onClick={() => appendToName(ds)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{ds}</button>))}
+                  <div className="grid grid-cols-6 gap-1">
+                    {['Ds', 'BoDs', 'BiDs', 'FoDs', 'FiDs', '*'].map(ds => (<button key={ds} onClick={() => appendToName(ds)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-[13px] font-bold rounded-sm hover:bg-blue-600">{ds}</button>))}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* 影片輸入與預覽區塊 */}
           <div className={`flex-1 flex-col bg-black relative ${!isInputMode ? 'flex' : 'hidden'}`}>
             {!embedUrl ? (
                <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -522,8 +510,8 @@ export default function App() {
                 const config = { composition: { bg: '#0b5394', label: 'COMPOSITION' }, presentation: { bg: '#990000', label: 'PRESENTATION' }, skatingSkills: { bg: '#b45f06', label: 'SKATING SKILLS' } }[key];
                 return (
                   <div key={key} className="flex h-full border border-slate-600 shadow-sm rounded-sm overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => openPcsModal(key)}>
-                    <div style={{ backgroundColor: config.bg }} className="text-white px-3 flex items-center font-bold text-sm lg:text-base tracking-wide writing-vertical">{config.label}</div>
-                    <div style={{ color: config.bg }} className="w-24 lg:w-28 bg-white flex items-center justify-center font-bold text-3xl outline-none">{pcs[key]}</div>
+                    <div style={{ backgroundColor: config.bg }} className="text-white px-3 flex items-center font-bold text-sm writing-vertical">{config.label}</div>
+                    <div style={{ color: config.bg }} className="w-24 bg-white flex items-center justify-center font-bold text-3xl outline-none">{pcs[key]}</div>
                   </div>
                 );
               })}
@@ -538,17 +526,16 @@ export default function App() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
+      {/* --- 補回：PCS 彈出視窗 (Modal) --- */}
       {isPcsModalOpen && (
         <div className="absolute inset-0 bg-black/90 z-50 flex items-center justify-center backdrop-blur-sm">
           <div className="bg-[#1a1a1a] border border-slate-600 rounded-lg shadow-2xl w-[1000px] h-[600px] flex flex-col overflow-hidden">
             
             <div className={`px-6 py-4 font-black text-2xl tracking-widest text-white border-b border-black flex justify-between items-center
-              ${activePcsCategory === 'composition' ? 'bg-[#0b5394]' : 
-                activePcsCategory === 'presentation' ? 'bg-[#990000]' : 'bg-[#b45f06]'}
+              ${activePcsCategory === 'composition' ? 'bg-[#0b5394]' : activePcsCategory === 'presentation' ? 'bg-[#990000]' : 'bg-[#b45f06]'}
             `}>
               <span className="uppercase">{activePcsCategory.replace(/([A-Z])/g, ' $1').trim()} SCORING</span>
             </div>
