@@ -381,13 +381,13 @@ export default function App() {
                       { label: 'A', btns: ['1', '2', '3', '4', 'Th'], mod: '+1Eu' },
                     ].map(row => (
                       <React.Fragment key={row.label}>
-                        <button onClick={() => appendToName(row.label)} className="bg-[#2b3036] hover:bg-slate-600 flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-sm active:scale-95">{row.label}</button>
+                        <button onClick={() => appendToName(row.label)} className="bg-[#2b3036] hover:bg-slate-600 flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-lg active:scale-95 py-2">{row.label}</button>
                         {row.btns.map((btn, idx) => {
                           let val = btn === 'Th' ? 'Th' : `${btn}${row.label}`;
-                          let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-sm font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-sm font-bold rounded-sm shadow-sm active:bg-blue-600";
+                          let btnClass = btn === 'Th' ? "bg-[#6a327a] text-white py-2 border border-[#522561] text-lg font-bold rounded-sm shadow-sm active:bg-[#4d235c]" : "bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm shadow-sm active:bg-blue-600";
                           return <button key={val} onClick={() => appendToName(val)} className={btnClass}>{btn}</button>
                         })}
-                        <button onClick={() => appendToName(row.mod)} className="bg-[#2b5433] text-white py-2 border border-[#3f7a4a] text-sm font-bold rounded-sm shadow-sm active:bg-green-600">{row.mod}</button>
+                        <button onClick={() => appendToName(row.mod)} className="bg-[#2b5433] text-white py-2 border border-[#3f7a4a] text-lg font-bold rounded-sm shadow-sm active:bg-green-600">{row.mod}</button>
                       </React.Fragment>
                     ))}
                   </div>
@@ -416,24 +416,24 @@ export default function App() {
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
                   <div className="grid grid-cols-6 gap-1">
-                    {['Tw', '1', '2', '3', '4', '*'].map(tw => (<button key={tw} onClick={() => appendToName(tw)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-base font-bold rounded-sm hover:bg-blue-600">{tw}</button>))}
+                    {['Tw', '1', '2', '3', '4', '*'].map(tw => (<button key={tw} onClick={() => appendToName(tw)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{tw}</button>))}
                   </div>
                 </div>
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Lifts</h4>
                   <div className="grid grid-cols-6 gap-1 mb-1">
-                    {['Li', '1', '2', '3', '4', '*'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-base font-bold rounded-sm hover:bg-blue-600">{lift}</button>))}
+                    {['Li', '1', '2', '3', '4', '*'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{lift}</button>))}
                   </div>
                   <div className="grid grid-cols-6 gap-1">
-                    {['5SLi', '5TLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className={`text-white py-2 border text-[13px] font-bold rounded-sm ${lift === 'ChLi' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{lift}</button>))}
+                    {['5SLi', '5TLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className={`text-white py-2 border text-lg font-bold rounded-sm ${lift === 'ChLi' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{lift}</button>))}
                   </div>
                 </div>
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Death Spirals</h4>
                   <div className="grid grid-cols-6 gap-1">
-                    {['Ds', 'BoDs', 'BiDs', 'FoDs', 'FiDs', '*'].map(ds => (<button key={ds} onClick={() => appendToName(ds)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-[13px] font-bold rounded-sm hover:bg-blue-600">{ds}</button>))}
+                    {['Ds', 'BoDs', 'BiDs', 'FoDs', 'FiDs', '*'].map(ds => (<button key={ds} onClick={() => appendToName(ds)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{ds}</button>))}
                   </div>
                 </div>
               </div>
