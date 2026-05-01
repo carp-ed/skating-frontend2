@@ -170,6 +170,36 @@ export default function App() {
     }
   };
 
+  const parseCSVLine = (line) => {
+    const cols = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        cols.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    cols.push(current);
+    return cols.map(value => {
+      const trimmed = value.trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed.slice(1, -1).replace(/""/g, '"');
+      }
+      return trimmed;
+    });
+  };
+
   // 支援解析 CSV 中的 Elements 與 Info
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -177,21 +207,65 @@ export default function App() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const lines = e.target.result.split('\n').filter(line => line.trim() !== '');
-      const parsedSkaters = lines.map(line => {
-        const cols = line.split(',');
-        const skater = { comp: cols[0]?.trim() || '', stn: cols[1]?.trim() || '', name: cols[2]?.trim().replace(/\//g, ' & ') || '', noc: cols[3]?.trim() || '' };
-        
-        // 嘗試讀取動作與資訊 (從第 5 欄開始)
+      const lines = e.target.result.split(/\r?\n/).filter(line => line.trim() !== '');
+      let headerMap = null;
+      let dataLines = lines;
+      if (lines.length > 0) {
+        const firstCols = parseCSVLine(lines[0]).map(value => value.trim().toLowerCase());
+        const headerKeywords = ['competition', 'comp', 'event', 'startnumber', 'stn', 'start no', 'start #', 'name', 'skater name', 'noc', 'country', 'nation', 'element1', 'info1'];
+        const isHeader = firstCols.some(col => headerKeywords.includes(col));
+        if (isHeader) {
+          headerMap = firstCols.reduce((map, key, idx) => {
+            map[key] = idx;
+            return map;
+          }, {});
+          dataLines = lines.slice(1);
+        }
+      }
+
+      const getHeaderIndex = (aliases) => {
+        if (!headerMap) return -1;
+        for (const alias of aliases) {
+          const key = alias.toLowerCase();
+          if (headerMap[key] !== undefined) return headerMap[key];
+        }
+        return -1;
+      };
+
+      const getElementHeaderIndex = (elementNumber, type) => {
+        if (!headerMap) return -1;
+        const key = `${type}${elementNumber}`.toLowerCase();
+        if (headerMap[key] !== undefined) return headerMap[key];
+        const altKey = `${type} ${elementNumber}`.toLowerCase();
+        if (headerMap[altKey] !== undefined) return headerMap[altKey];
+        return -1;
+      };
+
+      const parsedSkaters = dataLines.map(line => {
+        const cols = parseCSVLine(line);
+        const compIdx = getHeaderIndex(['competition', 'comp', 'event', 'competition name']);
+        const stnIdx = getHeaderIndex(['startnumber', 'stn', 'start no', 'start #']);
+        const nameIdx = getHeaderIndex(['name', 'skater name', 'skater']);
+        const nocIdx = getHeaderIndex(['noc', 'country', 'nation']);
+
+        const skater = {
+          comp: compIdx >= 0 ? cols[compIdx] : cols[0] || '',
+          stn: stnIdx >= 0 ? cols[stnIdx] : cols[1] || '',
+          name: ((nameIdx >= 0 ? cols[nameIdx] : cols[2]) || '').replace(/\//g, ' & '),
+          noc: nocIdx >= 0 ? cols[nocIdx] : cols[3] || ''
+        };
+
         const loadedElements = Array.from({ length: 16 }, (_, i) => {
-           const nameColIdx = 4 + (i * 2);
-           const infoColIdx = 5 + (i * 2);
-           return {
-               id: i + 1,
-               name: cols[nameColIdx] ? cols[nameColIdx].trim() : '',
-               goe: null, fall: false,
-               info: cols[infoColIdx] ? cols[infoColIdx].trim() : ''
-           };
+          const number = i + 1;
+          const nameColIdx = getElementHeaderIndex(number, 'element');
+          const infoColIdx = getElementHeaderIndex(number, 'info');
+          return {
+            id: number,
+            name: nameColIdx >= 0 ? cols[nameColIdx] || '' : cols[4 + i * 2] || '',
+            goe: null,
+            fall: false,
+            info: infoColIdx >= 0 ? cols[infoColIdx] || '' : cols[5 + i * 2] || ''
+          };
         });
         skater.elements = loadedElements;
         return skater;
