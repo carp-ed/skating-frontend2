@@ -336,11 +336,11 @@ export default function App() {
                 <React.Fragment key={el.id}>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-[#1a5b6e] text-sm cursor-pointer ${activeIndex === index ? 'bg-[#1e768f] text-white' : ''}`}>{String(index + 1).padStart(2, '0')}</div>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center px-2 border-b border-r border-[#1a5b6e] text-base cursor-pointer ${activeIndex === index ? 'bg-[#1e768f] text-white font-bold' : ''}`}>
-                    <input type="text" value={el.name} onChange={(e) => { const newEls=[...elements]; newEls[index].name=e.target.value; setElements(newEls); }} className="w-full bg-transparent outline-none placeholder:text-slate-500/50 cursor-pointer" placeholder="-" />
+                    <input type="text" value={el.name} readOnly className="w-full bg-transparent outline-none placeholder:text-slate-500/50 cursor-pointer" placeholder="-" />
                   </div>
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-slate-300 cursor-pointer font-bold text-lg ${el.goe !== null ? 'bg-white text-black' : 'bg-[#e0e0e0] text-transparent'}`}>{el.goe !== null ? el.goe : '-'}</div>
                   <div onClick={(e) => toggleFall(index, e)} className="flex items-center justify-center border-b border-r border-[#1a5b6e] cursor-pointer hover:bg-slate-700/50">
-                    {el.fall && <span className="text-red-500 font-black text-xl leading-none">X</span>}
+                    {el.fall && <span className="text-red-500 font-black text-xl leading-none">F</span>}
                   </div>
                   <div onClick={() => setActiveIndex(index)} className="flex items-center justify-center border-b border-[#1a5b6e] text-yellow-400 font-mono">
                     <input type="text" value={el.info} onChange={(e) => { const newEls=[...elements]; newEls[index].info=e.target.value; setElements(newEls); }} className="w-full text-center bg-transparent outline-none cursor-pointer" />
@@ -416,14 +416,20 @@ export default function App() {
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
                   <div className="grid grid-cols-6 gap-1">
-                    {['Tw', '1', '2', '3', '4', '*'].map(tw => (<button key={tw} onClick={() => appendToName(tw)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{tw}</button>))}
+                    {['Tw', '1', '2', '3', '4', '*'].map(tw => {
+                      const val = tw === 'Tw' || tw === '*' ? tw : `${tw}Tw`;
+                      return <button key={tw} onClick={() => appendToName(val)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{tw}</button>;
+                    })}
                   </div>
                 </div>
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Lifts</h4>
                   <div className="grid grid-cols-6 gap-1 mb-1">
-                    {['Li', '1', '2', '3', '4', '*'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{lift}</button>))}
+                    {['Li', '1', '2', '3', '4', '*'].map(lift => {
+                      const val = lift === 'Li' || lift === '*' ? lift : `${lift}Li`;
+                      return <button key={lift} onClick={() => appendToName(val)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{lift}</button>;
+                    })}
                   </div>
                   <div className="grid grid-cols-6 gap-1">
                     {['5SLi', '5TLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className={`text-white py-2 border text-lg font-bold rounded-sm ${lift === 'ChLi' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{lift}</button>))}
@@ -507,7 +513,7 @@ export default function App() {
           <div className="h-24 flex bg-[#2a2a2a] p-1 gap-2 shrink-0 items-center justify-between">
             <div className="flex gap-2 h-full py-1">
               {['composition', 'presentation', 'skatingSkills'].map((key) => {
-                const config = { composition: { bg: '#0b5394', label: 'COMPOSITION' }, presentation: { bg: '#990000', label: 'PRESENATATION' }, skatingSkills: { bg: '#b45f06', label: 'SKATING SKILLS' } }[key];
+                const config = { composition: { bg: '#0b5394', label: 'COMPOSITION' }, presentation: { bg: '#990000', label: 'PRESENTATION' }, skatingSkills: { bg: '#b45f06', label: 'SKATING SKILLS' } }[key];
                 return (
                   <div key={key} className="flex h-full border border-slate-600 shadow-sm rounded-sm overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => openPcsModal(key)}>
                     <div style={{ backgroundColor: config.bg }} className="text-white px-3 flex items-center font-bold text-sm writing-vertical">{config.label}</div>
