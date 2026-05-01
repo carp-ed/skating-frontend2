@@ -21,6 +21,8 @@ const pcsCriteria = {
   skatingSkills: ["Variety of edges, steps, turns, movements and directions", "Clarity of edges, steps, turns, movements and body control", "Balance and glide", "Flow", "Speed and power", "Unison"]
 };
 
+const APP_PASSWORD = "carped450"; // 可自行修改為你想要的密碼
+
 export default function App() {
   const initialElements = Array.from({ length: 16 }, (_, i) => ({
     id: i + 1, name: '', goe: null, fall: false, info: ''
@@ -31,6 +33,8 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isSent, setIsSent] = useState(false);
   const [notification, setNotification] = useState(''); 
+  const [isUnlocked, setIsUnlocked] = useState(() => window.localStorage.getItem('scoring_unlock') === 'true');
+  const [passwordInput, setPasswordInput] = useState('');
 
   const [pcs, setPcs] = useState({ composition: '0.00', presentation: '0.00', skatingSkills: '0.00' });
   const [pcsSubScores, setPcsSubScores] = useState({
@@ -64,6 +68,16 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  const handleUnlockApp = () => {
+    if (passwordInput === APP_PASSWORD) {
+      window.localStorage.setItem('scoring_unlock', 'true');
+      setIsUnlocked(true);
+      setNotification('✅ 密碼正確，已解鎖應用程式');
+    } else {
+      setNotification('❌ 密碼錯誤，請重新輸入');
+    }
+  };
 
   const handleVideoLoad = () => {
     if (!videoUrl) return;
@@ -184,11 +198,12 @@ export default function App() {
       });
 
       if (parsedSkaters.length > 0) {
+        const firstSkater = parsedSkaters[0];
         setSkaterList(parsedSkaters);
         setCurrentSkaterIndex(0);
-        setSkaterInfo(parsedSkaters[0]);
-        setElements(parsedSkaters[0].elements); // 載入 CSV 動作
+        setSkaterInfo(firstSkater);
         handleNewProgram(false);
+        setElements(firstSkater.elements || Array.from({ length: 16 }, (_, i) => ({ id: i + 1, name: '', goe: null, fall: false, info: '' })));
         setNotification(`✅ 成功載入 ${parsedSkaters.length} 位選手名單與預設動作！`);
       }
     };
@@ -197,16 +212,26 @@ export default function App() {
   };
 
   const handleNextSkater = () => {
-    if (skaterList.length === 0) return;
+    if (skaterList.length === 0) {
+      if (isSent) {
+        handleNewProgram(false);
+        setSkaterInfo(prev => ({ ...prev, stn: '', noc: '', name: '' }));
+        setNotification('➡️ 已建立下一位空白表單，可繼續輸入。');
+      }
+      return;
+    }
+
     if (currentSkaterIndex < skaterList.length - 1) {
       const nextIdx = currentSkaterIndex + 1;
       setCurrentSkaterIndex(nextIdx);
       setSkaterInfo(skaterList[nextIdx]);
-      setElements(skaterList[nextIdx].elements || Array.from({ length: 16 }, (_, i) => ({ id: i + 1, name: '', goe: null, fall: false, info: '' })));
       handleNewProgram(false);
+      setElements(skaterList[nextIdx].elements || Array.from({ length: 16 }, (_, i) => ({ id: i + 1, name: '', goe: null, fall: false, info: '' })));
     } else {
       if (window.confirm("已經是最後一位選手了！要開啟空白表單嗎？")) {
-        setSkaterList([]); setSkaterInfo({ comp: skaterInfo.comp, stn: '', noc: '', name: '' }); handleNewProgram(false);
+        setSkaterList([]);
+        setSkaterInfo({ comp: skaterInfo.comp, stn: '', noc: '', name: '' });
+        handleNewProgram(false);
       }
     }
   };
@@ -279,6 +304,32 @@ export default function App() {
 
   const goeButtons = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
 
+  if (!isUnlocked) {
+    return (
+      <div className="h-screen w-screen bg-[#070b12] text-slate-100 flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-[#121925] border border-slate-700 rounded-3xl p-8 shadow-2xl">
+          <h1 className="text-3xl font-black text-sky-400 mb-4 text-center">Scoring App 密碼鎖</h1>
+          <p className="text-slate-400 mb-6">請輸入密碼以解鎖應用程式。</p>
+          <input
+            type="password"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleUnlockApp(); }}
+            className="w-full bg-[#0d1420] border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-sky-500 mb-4"
+            placeholder="輸入密碼"
+          />
+          <button
+            onClick={handleUnlockApp}
+            className="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-3 rounded-xl transition-colors"
+          >
+            解鎖
+          </button>
+          <p className="mt-4 text-slate-500 text-sm">提示：這是前端簡易密碼保護，建議正式上線時改用後端驗證。</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#1a1a1a] text-slate-100 font-sans select-none overflow-hidden relative">
       
@@ -343,7 +394,7 @@ export default function App() {
                     {el.fall && <span className="text-red-500 font-black text-xl leading-none">F</span>}
                   </div>
                   <div onClick={() => setActiveIndex(index)} className="flex items-center justify-center border-b border-[#1a5b6e] text-yellow-400 font-mono">
-                    <input type="text" value={el.info} onChange={(e) => { const newEls=[...elements]; newEls[index].info=e.target.value; setElements(newEls); }} className="w-full text-center bg-transparent outline-none cursor-pointer" />
+                    <input type="text" value={el.info} readOnly className="w-full text-center bg-transparent outline-none cursor-not-allowed text-slate-300" />
                   </div>
                 </React.Fragment>
               ))}
