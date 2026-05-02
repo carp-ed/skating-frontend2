@@ -21,18 +21,7 @@ const pcsCriteria = {
   skatingSkills: ["Variety of edges, steps, turns, movements and directions", "Clarity of edges, steps, turns, movements and body control", "Balance and glide", "Flow", "Power and speed", "Unison"]
 };
 
-// 原始密碼的 SHA-256 哈希值（""）
-const APP_PASSWORD_HASH = "5a89c8b0e8e8f0c7d6c5b4a3e2d1f0a9c8b7e6d5c4b3a2f1e0d9c8b7a6f5e";
-
-// SHA-256 哈希函數
-const hashPassword = async (password) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-};
+const APP_PASSWORD = "carped450"; // 可自行修改為你想要的密碼
 
 export default function App() {
   const initialElements = Array.from({ length: 16 }, (_, i) => ({
@@ -80,20 +69,13 @@ export default function App() {
     }
   }, [notification]);
 
-  const handleUnlockApp = async () => {
-    try {
-      const inputHash = await hashPassword(passwordInput);
-      if (inputHash === APP_PASSWORD_HASH) {
-        window.localStorage.setItem('scoring_unlock', 'true');
-        setIsUnlocked(true);
-        setNotification('✅ 密碼正確，已解鎖應用程式');
-        setPasswordInput('');
-      } else {
-        setNotification('❌ 密碼錯誤，請重新輸入');
-      }
-    } catch (error) {
-      console.error('哈希計算錯誤:', error);
-      setNotification('⚠️ 發生錯誤，請重試');
+  const handleUnlockApp = () => {
+    if (passwordInput === APP_PASSWORD) {
+      window.localStorage.setItem('scoring_unlock', 'true');
+      setIsUnlocked(true);
+      setNotification('✅ 密碼正確，已解鎖應用程式');
+    } else {
+      setNotification('❌ 密碼錯誤，請重新輸入');
     }
   };
 
