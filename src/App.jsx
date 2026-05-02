@@ -463,7 +463,7 @@ export default function App() {
                   <div onClick={() => setActiveIndex(index)} className={`flex items-center px-2 border-b border-r border-[#1a5b6e] text-base cursor-pointer ${activeIndex === index ? 'bg-[#1e768f] text-white font-bold' : ''}`}>
                     <input type="text" value={el.name} readOnly className="w-full bg-transparent outline-none placeholder:text-slate-500/50 cursor-pointer" placeholder="-" />
                   </div>
-                  <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-slate-300 cursor-pointer font-bold text-lg ${el.goe !== null ? 'bg-black text-white' : 'bg-[#e0e0e0] text-transparent'}`}>{el.goe !== null ? el.goe : '-'}</div>
+                  <div onClick={() => setActiveIndex(index)} className={`flex items-center justify-center border-b border-r border-slate-300 cursor-pointer font-bold text-lg ${el.goe !== null ? 'bg-white text-black' : 'bg-[#e0e0e0] text-transparent'}`}>{el.goe !== null ? el.goe : '-'}</div>
                   <div onClick={(e) => toggleFall(index, e)} className="flex items-center justify-center border-b border-r border-[#1a5b6e] cursor-pointer hover:bg-slate-700/50">
                     {el.fall && <span className="text-red-500 font-black text-xl leading-none">F</span>}
                   </div>
@@ -630,7 +630,15 @@ export default function App() {
 
           <div className="h-16 flex bg-[#1a1a1a] p-1 gap-1 shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
             {goeButtons.map((btn) => {
-              let btnClass = btn < 0 ? "bg-[#542121] text-[#e0a8a8] border-[#7a3333] hover:bg-[#6e2b2b]" : btn === 0 ? "bg-[#756627] text-[#e8d89e] border-[#9c8936] hover:bg-[#8f7d31]" : "bg-[#2b5433] text-[#a8e0b6] border-[#3f7a4a] hover:bg-[#386e42]";
+              const isSelected = elements[activeIndex].goe === btn;
+              let btnClass;
+              if (btn < 0) {
+                btnClass = isSelected ? "bg-[#e0a8a8] text-[#542121] border-[#7a3333] hover:bg-[#f0b8b8]" : "bg-[#542121] text-[#e0a8a8] border-[#7a3333] hover:bg-[#6e2b2b]";
+              } else if (btn === 0) {
+                btnClass = isSelected ? "bg-[#e8d99e] text-[#756627] border-[#9c8936] hover:bg-[#f0e1a8]" : "bg-[#756627] text-[#e8d99e] border-[#9c8936] hover:bg-[#8f7d31]";
+              } else {
+                btnClass = isSelected ? "bg-[#a8e0b6] text-[#2b5433] border-[#3f7a4a] hover:bg-[#b8e8c0]" : "bg-[#2b5433] text-[#a8e0b6] border-[#3f7a4a] hover:bg-[#386e42]";
+              }
               return <button key={`goe-${btn}`} onClick={() => handleGoeClick(btn)} className={`flex-1 flex items-center justify-center text-3xl font-medium border-2 rounded-sm active:scale-95 ${btnClass}`}>{btn > 0 ? `+${btn}` : btn}</button>;
             })}
           </div>
