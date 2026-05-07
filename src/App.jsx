@@ -323,7 +323,7 @@ export default function App() {
     let current = newElements[activeIndex].name || '';
     const isJumpStr = /^([1-5]|Th)(T|S|Lo|F|Lz|A)$/.test(str) || /^[1-5](T|S|Lo|F|Lz|A)$/.test(str);
     if (isJumpStr && current.length > 0) {
-      if (!current.endsWith('+') && !current.endsWith('+1Eu+') && !current.endsWith('+SEQ') && !current.endsWith('+REP') && !current.endsWith('+COMBO') && !current.endsWith('*')) {
+      if (!current.endsWith('+') && !current.endsWith('+Eu+') && !current.endsWith('+SEQ') && !current.endsWith('+REP') && !current.endsWith('+COMBO') && !current.endsWith('*')) {
           current += '+';
       }
     }
@@ -493,7 +493,7 @@ export default function App() {
             <div className="flex flex-row gap-6 pb-4">
               
               {/* 左側：跳躍、旋轉、步伐 */}
-              <div className="w-[450px] flex flex-col gap-5">
+              <div className="flex-1 flex flex-col gap-5">
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Jumps / Throw Jumps</h4>
                   <div className="grid grid-cols-[35px_repeat(5,1fr)_85px] gap-1">
@@ -503,7 +503,7 @@ export default function App() {
                       { label: 'Lo', btns: ['1', '2', '3', '4', '5'], mod: '+COMBO' },
                       { label: 'F', btns: ['1', '2', '3', '4', '5'], mod: '+SEQ' },
                       { label: 'Lz', btns: ['1', '2', '3', '4', '5'], mod: '+REP' },
-                      { label: 'A', btns: ['1', '2', '3', '4', 'Th'], mod: '+1Eu' },
+                      { label: 'A', btns: ['1', '2', '3', '4', 'Th'], mod: '+Eu' },
                     ].map(row => (
                       <React.Fragment key={row.label}>
                         <button onClick={() => appendToName(row.label)} className="bg-[#2b3036] hover:bg-slate-600 flex items-center justify-center font-bold text-slate-300 border border-slate-700 rounded-sm text-lg active:scale-95 py-2">{row.label}</button>
@@ -520,24 +520,39 @@ export default function App() {
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Spins</h4>
-                  <div className="grid grid-cols-[repeat(6,1fr)] gap-1 mb-1">
-                    {['F', 'C', 'P', 'Sp', null, '*'].map(mod => mod ? (<button key={mod} onClick={() => appendToName(mod)} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">{mod}</button>) : <div key="empty"></div>)}
-                  </div>
-                  <div className="grid grid-cols-[repeat(6,1fr)] gap-1">
-                    {['CSp', 'SSp', 'USp', 'LSp', 'CoSp', 'ChSp'].map(base => (<button key={base} onClick={() => appendToName(base)} className={`text-white py-2 border text-lg font-bold rounded-sm ${base === 'ChSp' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{base}</button>))}
+                  <div className="grid grid-cols-[repeat(6,1fr)] grid-rows-2 gap-1">
+                    {/* 第一列：Sp（跨2行）*/}
+                    <button onClick={() => appendToName('Sp')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm row-span-2 flex items-center justify-center">Sp</button>
+                    {/* 第一行：F, C, P, 空, * */}
+                    <button onClick={() => appendToName('F')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">F</button>
+                    <button onClick={() => appendToName('C')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">C</button>
+                    <button onClick={() => appendToName('P')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">P</button>
+                    <div></div>
+                    <button onClick={() => appendToName('*')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">*</button>
+                    {/* 第二行：CSp, SSp, LSp, USp, CoSp */}
+                    <button onClick={() => appendToName('CSp')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">CSp</button>
+                    <button onClick={() => appendToName('SSp')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">SSp</button>
+                    <button onClick={() => appendToName('LSp')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">LSp</button>
+                    <button onClick={() => appendToName('USp')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">USp</button>
+                    <button onClick={() => appendToName('CoSp')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">CoSp</button>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Sequences</h4>
-                  <div className="flex gap-1">
-                    {['StSq', 'ChSq'].map(seq => (<button key={seq} onClick={() => appendToName(seq)} className="flex-1 bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm">{seq}</button>))}
+                  <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Step / Choreographic Elements</h4>
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-1">
+                    <button onClick={() => appendToName('StSq')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">StSq</button>
+                    <div></div>
+                    <button onClick={() => appendToName('ChSq')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">ChSq</button>
+                    <button onClick={() => appendToName('ChSp')} className="bg-slate-700 text-white py-2 border border-slate-500 text-lg font-bold rounded-sm">ChSp</button>
+                    <button onClick={() => appendToName('ChPSp')} className="bg-[#b45f06] border-orange-500 text-white py-2 border text-lg font-bold rounded-sm hover:bg-orange-600">ChPSp</button>
+                    <button onClick={() => appendToName('ChPLi')} className="bg-[#b45f06] border-orange-500 text-white py-2 border text-lg font-bold rounded-sm hover:bg-orange-600">ChPLi</button>
                   </div>
                 </div>
               </div>
 
               {/* 右側：雙人/冰舞動作 */}
-              <div className="flex-1 flex flex-col gap-5 border-l border-slate-700 pl-6">
+              <div className="flex-1 flex flex-col gap-5">
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Twist Lifts</h4>
                   <div className="grid grid-cols-6 gap-1">
@@ -550,14 +565,21 @@ export default function App() {
 
                 <div>
                   <h4 className="text-yellow-400 font-bold mb-1 uppercase tracking-wider text-xs">Lifts</h4>
-                  <div className="grid grid-cols-6 gap-1 mb-1">
-                    {['Li', '1', '2', '3', '4', '*'].map(lift => {
-                      const val = lift === 'Li' || lift === '*' ? lift : `${lift}Li`;
-                      return <button key={lift} onClick={() => appendToName(val)} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">{lift}</button>;
-                    })}
-                  </div>
-                  <div className="grid grid-cols-6 gap-1">
-                    {['5SLi', '5TLi', '5BLi', '5RLi', '5ALi', 'ChLi'].map(lift => (<button key={lift} onClick={() => appendToName(lift)} className={`text-white py-2 border text-lg font-bold rounded-sm ${lift === 'ChLi' ? 'bg-[#b45f06] border-orange-500 hover:bg-orange-600' : 'bg-[#0c3e4e] border-[#1a5b6e] hover:bg-blue-600'}`}>{lift}</button>))}
+                  <div className="grid grid-cols-[repeat(6,1fr)] grid-rows-2 gap-1">
+                    {/* 第一列：Li（跨2行）*/}
+                    <button onClick={() => appendToName('Li')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm row-span-2 flex items-center justify-center hover:bg-blue-600">Li</button>
+                    {/* 第一行：1, 2, 3, 4, * */}
+                    <button onClick={() => appendToName('1Li')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">1</button>
+                    <button onClick={() => appendToName('2Li')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">2</button>
+                    <button onClick={() => appendToName('3Li')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">3</button>
+                    <button onClick={() => appendToName('4Li')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">4</button>
+                    <button onClick={() => appendToName('*')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">*</button>
+                    {/* 第二行：5SLi, 5TLi, 5BLi, 5RLi, 5ALi */}
+                    <button onClick={() => appendToName('5SLi')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">5SLi</button>
+                    <button onClick={() => appendToName('5TLi')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">5TLi</button>
+                    <button onClick={() => appendToName('5BLi')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">5BLi</button>
+                    <button onClick={() => appendToName('5RLi')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">5RLi</button>
+                    <button onClick={() => appendToName('5ALi')} className="bg-[#0c3e4e] text-white py-2 border border-[#1a5b6e] text-lg font-bold rounded-sm hover:bg-blue-600">5ALi</button>
                   </div>
                 </div>
 
